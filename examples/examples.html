@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en-nz">
+
+<head>
+    <title></title>
+    <style>
+        html {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            background-color: #e6e6e6;
+        }
+        
+    </style>
+    <link rel="stylesheet" type="text/css" href="../source/herdem.css">
+</head>
+
+<body>
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+
+    <script type="text/javascript" src="jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="../source/herdem.js"></script>
+    <script type="text/javascript">
+        var world = new World();
+        
+        var canvas = document.getElementById('canvas');
+        function drawLoop() {
+            if (canvas.getContext) {
+                var ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                world.draw(ctx);
+                requestAnimationFrame(drawLoop);
+            }
+        }
+
+        $(document).ready(function () {
+
+            drawLoop();
+
+        });
+
+
+    </script>
+</body>
+
+</html>
