@@ -3,7 +3,6 @@ var Mover = function(settings) {
     var self = this;
 
     self.world = settings.world;
-    console.log("hi - " + self.world.height);
     self.width = 40;
     self.height = 40;
     // put this somewhere within the bound of the page
@@ -14,10 +13,11 @@ var Mover = function(settings) {
     self.threatDistance = 100;
     self.lastSawThreatAt = null;
 
+    self.vibe = "idle";
+    self.currentVibeTime = 0;
+    self.currentVibeTimeLimit = 0;
 
     self.draw = function(ctx) {
-
-
         ctx.save();
         ctx.translate(self.current.x , self.current.y );
         ctx.fillStyle = '#0000ff';
@@ -45,14 +45,14 @@ var Mover = function(settings) {
         }
     }
     self.setFleeTarget = function(threatLocation) {
-        console.log("triggerFlee");
+        self.vibe = "fleeing";
         // pick a target in the opposite direction of the threat
         // work out the angle between where we are and the current threat position
         var delta_x = threatLocation.x - self.current.x;
         var delta_y = threatLocation.y - self.current.y;
         var theta_radians = Math.atan2(delta_y, delta_x)
 
-        var fleeDistance = 50;
+        var fleeDistance = 200;
 
         // what is the adjacent (X)
         var adjacent = Math.cos(theta_radians) * fleeDistance;
@@ -73,12 +73,17 @@ var Mover = function(settings) {
             targetY = self.world.height - (self.height / 2);
         }
         self.target = { x: targetX, y: targetY };
-        console.log("my new target is ");
-        console.log(self.target);
+    }
+    self.process = function() {
+        self.checkIfNeedToFlee();
+        self.currentVibeTime += self.world.processIncrement;
+        self.checkIfNewVibeNeeded();
+        self.move();
     }
     self.move = function() {
-        self.checkIfNeedToFlee();
+        if(self.vibe=="idle") return;
         if(self.target.x === self.current.x && self.target.y === self.current.y) {
+            self.getNewVibe();
             return;
         }
 
@@ -86,16 +91,17 @@ var Mover = function(settings) {
         var delta_y = self.target.y - self.current.y;
         var theta_radians = Math.atan2(delta_y, delta_x)
 
-        var travelDistance = 5;
+        var travelDistance = self.getSpeed();
 
         var distanceToTarget = Math.sqrt( delta_x*delta_x + delta_y*delta_y );
         // if we're very close then set us at the target
         if(distanceToTarget < travelDistance) {
             self.current.x = self.target.x;
             self.current.y = self.target.y;
+            self.getNewVibe();
             return;
         }
-        console.log(distanceToTarget);
+        //console.log(distanceToTarget);
 
         // what is the adjacent (X)
         var adjacent = Math.cos(theta_radians) * travelDistance;
@@ -103,10 +109,42 @@ var Mover = function(settings) {
         var opposite = Math.sin(theta_radians) * travelDistance;
         self.current.x = self.current.x + adjacent;
         self.current.y = self.current.y + opposite;
-
-
+    }
+    self.getSpeed = function() {
+        if(self.vibe === "wandering") {
+            return 3;
+        } else if (self.vibe === "fleeing") {
+            return 6;
+        } else {
+            console.log("ruh roh");
+        }
     }
 
+    self.checkIfNewVibeNeeded = function() {
+        // at the moment this really only applies if they've been idle ...
+        // when movement to a target is complete then they will automatically get a new vibe
+        if(self.vibe === "idle") {
+            if(self.currentVibeTime > self.currentVibeTimeLimit) {
+                self.getNewVibe();
+            }
+        }
+    }
+    self.getNewVibe = function() {
+        var choice = getRandomInt(1, 2);
+        if(choice === 1) {
+            self.vibe= "idle";
+            self.currentVibeTime = 0;
+            self.currentVibeTimeLimit = getRandomInt(1000, 10000);
+        } else if (choice === 2) {
+            self.vibe= "wandering";
+            var x = getRandomInt(self.width/2, self.world.width - self.width/2);
+            var y = getRandomInt(self.height/2, self.world.height - self.height/2);
+            self.target = { x:x, y:y};
+        } else {
+            console.log("uh oh");
+        }
+        console.log("vibe is now: " + self.vibe);
+    }
 };
 
 
@@ -116,6 +154,7 @@ var World = function(settings){
     self.movers = [];
     self.width = 800;
     self.height = 600;
+    self.processIncrement = 100;
     var moverSettings = {
         world : this
     }
@@ -129,13 +168,13 @@ var World = function(settings){
             self.movers[i].draw(context);
         }
     }
-    self.move = function () {
+    self.process = function () {
         for(var i = 0; i < self.movers.length; i++) {
-            self.movers[i].move();
+            self.movers[i].process();
         }
-        setTimeout(function () { self.move(); }, 100);
+        setTimeout(function () { self.process(); }, self.processIncrement);
     }
-    self.move();
+    self.process();
 
     self.notifyOfMouseMove = function(event) {
         var pointer = { x: event.pageX, y: event.pageY };
