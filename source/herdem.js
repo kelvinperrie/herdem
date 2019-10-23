@@ -1,4 +1,3 @@
-
 var Mover = function(settings) {
     var self = this;
 
@@ -6,22 +5,35 @@ var Mover = function(settings) {
     self.width = 40;
     self.height = 40;
     // put this somewhere within the bound of the page
-    var x = getRandomInt(0 + self.width / 2,self.world.width - self.width / 2)
-    var y = getRandomInt(0 + self.height / 2,self.world.height - self.height / 2)
+    var x = getRandomInt(0 + self.width / 2, self.world.width - self.width / 2)
+    var y = getRandomInt(0 + self.height / 2, self.world.height - self.height / 2)
     self.current = { x: x, y: y };
     self.target = { x: x, y: y };
     self.threatDistance = 100;
     self.lastSawThreatAt = null;
 
+    self.idleLeftImage = new Image();
+    self.idleLeftImage.src = "../images/idle-l.png";
+    self.idleRightImage = new Image();
+    self.idleRightImage.src = "../images/idle-r.png";
+    self.moveLeftImage = new Image();
+    self.moveLeftImage.src = "../images/walk-l.gif";
+    self.moveRightImage = new Image();
+    self.moveRightImage.src = "../images/walk-r.gif";
+    self.currentImage = new Image();
+
     self.vibe = "idle";
     self.currentVibeTime = 0;
     self.currentVibeTimeLimit = 0;
+    self.currentDirection = "left";
+    self.processCounter = 0;
 
     self.draw = function(ctx) {
         ctx.save();
-        ctx.translate(self.current.x , self.current.y );
-        ctx.fillStyle = '#0000ff';
-        ctx.fillRect(- (self.width / 2), - (self.height / 2), self.width, self.height);
+        ctx.translate(self.current.x, self.current.y);
+        //ctx.fillStyle = '#0000ff';
+        //ctx.fillRect(-(self.width / 2), -(self.height / 2), self.width, self.height);
+        ctx.drawImage(self.currentImage, -(self.width / 2), -(self.height / 2));
         ctx.restore();
 
         // temporarily draw the target
@@ -35,12 +47,12 @@ var Mover = function(settings) {
         self.lastSawThreatAt = pointerLocation;
     }
     self.checkIfNeedToFlee = function() {
-        if(!self.lastSawThreatAt) return;
+        if (!self.lastSawThreatAt) return;
         var a = self.current.x - self.lastSawThreatAt.x;
         var b = self.current.y - self.lastSawThreatAt.y;
 
-        var distance = Math.sqrt( a*a + b*b );
-        if(distance < self.threatDistance) {
+        var distance = Math.sqrt(a * a + b * b);
+        if (distance < self.threatDistance) {
             self.setFleeTarget(self.lastSawThreatAt);
         }
     }
@@ -61,28 +73,31 @@ var Mover = function(settings) {
 
         // don't let the target be closer to the edge than this object will fit
         var targetX = self.current.x - adjacent;
-        if(targetX < self.width / 2) {
+        if (targetX < self.width / 2) {
             targetX = self.width / 2;
-        } else if(targetX > self.world.width - (self.width / 2)) {
+        } else if (targetX > self.world.width - (self.width / 2)) {
             targetX = self.world.width - (self.width / 2);
         }
         var targetY = self.current.y - opposite;
-        if(targetY < self.height / 2) {
+        if (targetY < self.height / 2) {
             targetY = self.height / 2;
-        } else if(targetY > (self.world.height - (self.height / 2))) {
+        } else if (targetY > (self.world.height - (self.height / 2))) {
             targetY = self.world.height - (self.height / 2);
         }
         self.target = { x: targetX, y: targetY };
+        self.setCurrentDirection();
     }
     self.process = function() {
         self.checkIfNeedToFlee();
         self.currentVibeTime += self.world.processIncrement;
         self.checkIfNewVibeNeeded();
         self.move();
+        self.processCounter += 1;
+        self.setCurrentImage();
     }
     self.move = function() {
-        if(self.vibe=="idle") return;
-        if(self.target.x === self.current.x && self.target.y === self.current.y) {
+        if (self.vibe == "idle") return;
+        if (self.target.x === self.current.x && self.target.y === self.current.y) {
             self.getNewVibe();
             return;
         }
@@ -93,9 +108,9 @@ var Mover = function(settings) {
 
         var travelDistance = self.getSpeed();
 
-        var distanceToTarget = Math.sqrt( delta_x*delta_x + delta_y*delta_y );
+        var distanceToTarget = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
         // if we're very close then set us at the target
-        if(distanceToTarget < travelDistance) {
+        if (distanceToTarget < travelDistance) {
             self.current.x = self.target.x;
             self.current.y = self.target.y;
             self.getNewVibe();
@@ -111,7 +126,7 @@ var Mover = function(settings) {
         self.current.y = self.current.y + opposite;
     }
     self.getSpeed = function() {
-        if(self.vibe === "wandering") {
+        if (self.vibe === "wandering") {
             return 3;
         } else if (self.vibe === "fleeing") {
             return 6;
@@ -123,32 +138,52 @@ var Mover = function(settings) {
     self.checkIfNewVibeNeeded = function() {
         // at the moment this really only applies if they've been idle ...
         // when movement to a target is complete then they will automatically get a new vibe
-        if(self.vibe === "idle") {
-            if(self.currentVibeTime > self.currentVibeTimeLimit) {
+        if (self.vibe === "idle") {
+            if (self.currentVibeTime > self.currentVibeTimeLimit) {
                 self.getNewVibe();
             }
         }
     }
     self.getNewVibe = function() {
         var choice = getRandomInt(1, 2);
-        if(choice === 1) {
-            self.vibe= "idle";
+        if (choice === 1) {
+            self.vibe = "idle";
             self.currentVibeTime = 0;
             self.currentVibeTimeLimit = getRandomInt(1000, 10000);
         } else if (choice === 2) {
-            self.vibe= "wandering";
-            var x = getRandomInt(self.width/2, self.world.width - self.width/2);
-            var y = getRandomInt(self.height/2, self.world.height - self.height/2);
-            self.target = { x:x, y:y};
+            self.vibe = "wandering";
+            var x = getRandomInt(self.width / 2, self.world.width - self.width / 2);
+            var y = getRandomInt(self.height / 2, self.world.height - self.height / 2);
+            self.target = { x: x, y: y };
+            self.setCurrentDirection();
         } else {
             console.log("uh oh");
         }
         console.log("vibe is now: " + self.vibe);
     }
+    self.setCurrentDirection = function() {
+        self.currentDirection = self.target.x > self.current.x ? "right" : "left";
+        console.log(self.currentDirection);
+    }
+    self.setCurrentImage = function() {
+
+        if (self.vibe === "wandering" || self.vibe === "fleeing") {
+            // walk-l-1.png
+            var index = (self.processCounter % 4) + 1; // 4 frames
+            var url = "../images/walk-" + (self.currentDirection === "left" ? "l" : "r");
+            console.log(url);
+            self.currentImage.src = url + "-" + index + ".png";
+        } else {
+            if (self.currentImage.src.includes("idle")) return;
+            console.log("doing idle");
+            self.currentImage.src = "../images/idle-" + (self.currentDirection === "left" ? "l" : "r") + ".png";
+        }
+        console.log("have set the current image to " + self.currentImage.src);
+    }
 };
 
 
-var World = function(settings){
+var World = function(settings) {
     var self = this;
 
     self.movers = [];
@@ -156,29 +191,29 @@ var World = function(settings){
     self.height = 600;
     self.processIncrement = 100;
     var moverSettings = {
-        world : this
+        world: this
     }
 
-    for (var i = 0; i < 100; i++) {
+    for (var i = 0; i < 1; i++) {
         var newMover = new Mover(moverSettings);
         self.movers.push(newMover);
     }
     self.draw = function(context) {
-        for(var i = 0; i < self.movers.length; i++) {
+        for (var i = 0; i < self.movers.length; i++) {
             self.movers[i].draw(context);
         }
     }
-    self.process = function () {
-        for(var i = 0; i < self.movers.length; i++) {
+    self.process = function() {
+        for (var i = 0; i < self.movers.length; i++) {
             self.movers[i].process();
         }
-        setTimeout(function () { self.process(); }, self.processIncrement);
+        setTimeout(function() { self.process(); }, self.processIncrement);
     }
     self.process();
 
     self.notifyOfMouseMove = function(event) {
         var pointer = { x: event.pageX, y: event.pageY };
-        for(var i = 0; i < self.movers.length; i++) {
+        for (var i = 0; i < self.movers.length; i++) {
             self.movers[i].notifyOfMouseMove(pointer);
         }
     }
