@@ -16,10 +16,22 @@ var Mover = function(settings) {
     self.idleLeftImage.src = "../images/idle-l.png";
     self.idleRightImage = new Image();
     self.idleRightImage.src = "../images/idle-r.png";
-    self.moveLeftImage = new Image();
-    self.moveLeftImage.src = "../images/walk-l.gif";
-    self.moveRightImage = new Image();
-    self.moveRightImage.src = "../images/walk-r.gif";
+    self.moveLeftImage1 = new Image();
+    self.moveLeftImage1.src = "../images/walk-l-1.png";
+    self.moveLeftImage2 = new Image();
+    self.moveLeftImage2.src = "../images/walk-l-2.png";
+    self.moveLeftImage3 = new Image();
+    self.moveLeftImage3.src = "../images/walk-l-3.png";
+    self.moveLeftImage4 = new Image();
+    self.moveLeftImage4.src = "../images/walk-l-4.png";
+    self.moveRightImage1 = new Image();
+    self.moveRightImage1.src = "../images/walk-r-1.png";
+    self.moveRightImage2 = new Image();
+    self.moveRightImage2.src = "../images/walk-r-2.png";
+    self.moveRightImage3 = new Image();
+    self.moveRightImage3.src = "../images/walk-r-3.png";
+    self.moveRightImage4 = new Image();
+    self.moveRightImage4.src = "../images/walk-r-4.png";
     self.currentImage = new Image();
 
     self.vibe = "idle";
@@ -37,11 +49,11 @@ var Mover = function(settings) {
         ctx.restore();
 
         // temporarily draw the target
-        ctx.save();
-        ctx.translate(self.target.x, self.target.y);
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(-2, -2, 4, 4);
-        ctx.restore();
+        // ctx.save();
+        // ctx.translate(self.target.x, self.target.y);
+        // ctx.fillStyle = '#ff0000';
+        // ctx.fillRect(-2, -2, 4, 4);
+        // ctx.restore();
     }
     self.notifyOfMouseMove = function(pointerLocation) {
         self.lastSawThreatAt = pointerLocation;
@@ -169,10 +181,12 @@ var Mover = function(settings) {
 
         if (self.vibe === "wandering" || self.vibe === "fleeing") {
             // walk-l-1.png
+            // moveRightImage4
             var index = (self.processCounter % 4) + 1; // 4 frames
-            var url = "../images/walk-" + (self.currentDirection === "left" ? "l" : "r");
-            console.log(url);
-            self.currentImage.src = url + "-" + index + ".png";
+            //var url = "../images/walk-" + (self.currentDirection === "left" ? "l" : "r");
+            var name = "move" + (self.currentDirection === "left" ? "Left" : "Right") + "Image" + index;
+            console.log(name);
+            self.currentImage = self[name];
         } else {
             if (self.currentImage.src.includes("idle")) return;
             console.log("doing idle");
@@ -194,7 +208,7 @@ var World = function(settings) {
         world: this
     }
 
-    for (var i = 0; i < 1; i++) {
+    for (var i = 0; i < 100; i++) {
         var newMover = new Mover(moverSettings);
         self.movers.push(newMover);
     }
