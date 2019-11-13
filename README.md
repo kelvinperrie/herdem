@@ -13,3 +13,7 @@ A whooooole lot of squares
 Chickens instead of squares. An improvement?
 
 ![example 3](examples/chickens1.gif?raw=true "example 3")
+
+Fox on the cursor
+
+![example 3](examples/fox1.gif?raw=true "example 3")
