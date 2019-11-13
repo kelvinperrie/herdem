@@ -171,11 +171,10 @@ var Mover = function(settings) {
         } else {
             console.log("uh oh");
         }
-        console.log("vibe is now: " + self.vibe);
+        //console.log("vibe is now: " + self.vibe);
     }
     self.setCurrentDirection = function() {
         self.currentDirection = self.target.x > self.current.x ? "right" : "left";
-        console.log(self.currentDirection);
     }
     self.setCurrentImage = function() {
 
@@ -185,17 +184,68 @@ var Mover = function(settings) {
             var index = (self.processCounter % 4) + 1; // 4 frames
             //var url = "../images/walk-" + (self.currentDirection === "left" ? "l" : "r");
             var name = "move" + (self.currentDirection === "left" ? "Left" : "Right") + "Image" + index;
-            console.log(name);
             self.currentImage = self[name];
         } else {
             if (self.currentImage.src.includes("idle")) return;
-            console.log("doing idle");
             self.currentImage.src = "../images/idle-" + (self.currentDirection === "left" ? "l" : "r") + ".png";
         }
-        console.log("have set the current image to " + self.currentImage.src);
     }
 };
 
+var Fox = function() {
+    var self = this;
+
+    self.current = { x : -100, y : -100};
+    self.foxRunLeftImage1 = new Image();
+    self.foxRunLeftImage1.src = "../images/fox-left-1.png";
+    self.foxRunLeftImage2 = new Image();
+    self.foxRunLeftImage2.src = "../images/fox-left-3.png";
+    self.foxRunRightImage1 = new Image();
+    self.foxRunRightImage1.src = "../images/fox-right-1.png";
+    self.foxRunRightImage2 = new Image();
+    self.foxRunRightImage2.src = "../images/fox-right-3.png";
+    self.foxSitImage = new Image();
+    self.foxSitImage.src = "../images/fox-sitting.png";
+    self.foxCurrentImageIndex = 1;
+    self.currentImage = new Image();
+    self.lastMovedTimer;
+    self.status = "running";
+    self.direction = "Left";
+
+    self.draw = function(context) {
+        context.save();
+        context.translate(self.current.x, self.current.y);
+        context.drawImage(self.currentImage, -(30), -(30));
+        context.restore();
+    }
+    self.process = function() {
+        self.setFoxImage();
+    }
+    self.setFoxImage = function() {
+        if(self.status === "running") {
+            var newIndex = self.foxCurrentImageIndex + 1;
+            if(newIndex > 2) {
+                newIndex = 1;
+            }
+            self.foxCurrentImageIndex = newIndex;
+            var name = "foxRun" + self.direction + "Image" + self.foxCurrentImageIndex;
+            self.currentImage = self[name];
+        } else {
+            self.currentImage = self.foxSitImage;
+        }
+    }
+    self.notifyOfMouseMove = function(pointerLocation) {
+        self.direction = self.current.x < pointerLocation.x ? "Right" : "Left";
+        self.current = pointerLocation;
+
+        self.status = "running";
+        clearTimeout(self.lastMovedTimer);
+        self.lastMovedTimer = setTimeout(function() {
+            self.status = "sitting";
+        }, 100);
+    }
+
+}
 
 var World = function(settings) {
     var self = this;
@@ -204,6 +254,7 @@ var World = function(settings) {
     self.width = 800;
     self.height = 600;
     self.processIncrement = 100;
+    self.fox = new Fox();
     var moverSettings = {
         world: this
     }
@@ -216,11 +267,14 @@ var World = function(settings) {
         for (var i = 0; i < self.movers.length; i++) {
             self.movers[i].draw(context);
         }
+        self.fox.draw(context);
     }
+
     self.process = function() {
         for (var i = 0; i < self.movers.length; i++) {
             self.movers[i].process();
         }
+        self.fox.process();
         setTimeout(function() { self.process(); }, self.processIncrement);
     }
     self.process();
@@ -230,6 +284,7 @@ var World = function(settings) {
         for (var i = 0; i < self.movers.length; i++) {
             self.movers[i].notifyOfMouseMove(pointer);
         }
+        self.fox.notifyOfMouseMove(pointer);
     }
     $("html").mousemove(function(event) {
         self.notifyOfMouseMove(event);
