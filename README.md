@@ -1,6 +1,6 @@
 # herdem
 
-Done in html canvas, this is a whole lot of chickens that will run from the cursor. Here's the whole monstrosity: http://htmlpreview.github.io/?https://github.com/kelvinperrie/herdem/blob/master/examples/examples.html
+Done in html canvas, this is a whole lot of chickens that will run from the cursor. Here's the whole monstrosity: https://herdem.netlify.app/examples/examples.html
 
 Getting the basic flee working; each blue square has a red square that is the destination it is fleeing too:
 
